@@ -17,6 +17,7 @@ export const MIN_GRID = 4;
 export const MAX_GRID = 16;
 export const PUZZLES_STORAGE_KEY = "queen-competition-puzzles";
 const LEGACY_LEVELS_STORAGE_KEY = "queen-competition-levels";
+const DEFAULT_PUZZLES_SEEDED_KEY = "queen-competition-default-puzzles-seeded";
 
 export const palette = [
   "#f87171",
@@ -245,21 +246,66 @@ export function validateQueens(
   };
 }
 
+function buildDefaultPuzzles(): DesignedPuzzle[] {
+  const baseTime = Date.now();
+
+  return [
+    {
+      id: "default-starter-6",
+      name: "Starter 6x6",
+      size: 6,
+      board: generateBoard(6, 6),
+      createdAt: baseTime,
+    },
+    {
+      id: "default-classic-8",
+      name: "Classic 8x8",
+      size: 8,
+      board: generateBoard(8, 8),
+      createdAt: baseTime + 1,
+    },
+    {
+      id: "default-challenge-10",
+      name: "Challenge 10x10",
+      size: 10,
+      board: generateBoard(10, 10),
+      createdAt: baseTime + 2,
+    },
+  ];
+}
+
+function seedDefaultPuzzlesOnce(): DesignedPuzzle[] {
+  const defaults = buildDefaultPuzzles();
+  window.localStorage.setItem(PUZZLES_STORAGE_KEY, JSON.stringify(defaults));
+  window.localStorage.setItem(DEFAULT_PUZZLES_SEEDED_KEY, "1");
+  return defaults;
+}
+
 export function loadDesignedPuzzles(): DesignedPuzzle[] {
   if (typeof window === "undefined") {
     return [];
   }
 
+  const hasSeededDefaults = window.localStorage.getItem(DEFAULT_PUZZLES_SEEDED_KEY) === "1";
+
   const raw =
     window.localStorage.getItem(PUZZLES_STORAGE_KEY) ??
     window.localStorage.getItem(LEGACY_LEVELS_STORAGE_KEY);
   if (!raw) {
+    if (!hasSeededDefaults) {
+      return seedDefaultPuzzlesOnce();
+    }
+
     return [];
   }
 
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) {
+      if (!hasSeededDefaults) {
+        return seedDefaultPuzzlesOnce();
+      }
+
       return [];
     }
 
@@ -282,8 +328,16 @@ export function loadDesignedPuzzles(): DesignedPuzzle[] {
       window.localStorage.setItem(PUZZLES_STORAGE_KEY, JSON.stringify(puzzles));
     }
 
+    if (!puzzles.length && !hasSeededDefaults) {
+      return seedDefaultPuzzlesOnce();
+    }
+
     return puzzles;
   } catch {
+    if (!hasSeededDefaults) {
+      return seedDefaultPuzzlesOnce();
+    }
+
     return [];
   }
 }
