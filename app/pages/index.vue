@@ -20,6 +20,7 @@ const isGameStarted = ref(false);
 const isInstructionOpen = ref(false);
 const isSettingsOpen = ref(false);
 const isSolvedDialogOpen = ref(false);
+const hintMessage = ref("");
 const showTimer = ref(true);
 const autoCheck = ref(true);
 const autoPlaceXs = ref(false);
@@ -313,6 +314,7 @@ function clearMarks(): void {
   pushHistory();
   marks.value = {};
   isSolvedDialogOpen.value = false;
+  hintMessage.value = "";
 }
 
 function undoLastMove(): void {
@@ -332,6 +334,7 @@ function backToSelection(): void {
   marks.value = {};
   history.value = [];
   isSolvedDialogOpen.value = false;
+  hintMessage.value = "";
 }
 
 function refreshSavedPuzzles(): void {
@@ -343,6 +346,7 @@ function refreshSavedPuzzles(): void {
   marks.value = {};
   history.value = [];
   isSolvedDialogOpen.value = false;
+  hintMessage.value = "";
 }
 
 function startGame(): void {
@@ -357,12 +361,17 @@ function startGame(): void {
   history.value = [];
   isGameStarted.value = true;
   isSolvedDialogOpen.value = false;
+  hintMessage.value = "";
   
   // Start timer when game begins
   startedAt.value = Date.now();
   now.value = Date.now();
   stopTimerTicker();
   startTimerTicker();
+}
+
+function showHintComingSoon(): void {
+  hintMessage.value = "Comming soon";
 }
 
 function handleWindowPointerDown(event: PointerEvent): void {
@@ -576,8 +585,9 @@ onBeforeUnmount(() => {
 
         <div class="game-bottombar">
           <button class="btn" type="button" :disabled="!canUndo" @click="undoLastMove">Undo</button>
-          <button class="btn" type="button" disabled>Hint</button>
+          <button class="btn" type="button" @click="showHintComingSoon">Hint</button>
         </div>
+        <p v-if="hintMessage" class="hint-message">{{ hintMessage }}</p>
 
         <div class="instruction-card" role="note" aria-label="game instructions">
           <button
