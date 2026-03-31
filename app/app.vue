@@ -48,6 +48,7 @@ watch(
       >
         <NuxtLink to="/">Play</NuxtLink>
         <NuxtLink to="/designer">Puzzle Designer</NuxtLink>
+        <NuxtLink to="/about">About</NuxtLink>
       </nav>
     </header>
     <NuxtPage />
