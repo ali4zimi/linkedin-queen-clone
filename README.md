@@ -1,75 +1,62 @@
-# Nuxt Minimal Starter
+# Queens Puzzle Clone
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Inspired by the LinkedIn Queens game, this project is a clean, mobile-friendly logic puzzle built with Nuxt.
+
+## Purpose
+
+This is a hobby project. I created this clone because many friends told me they wanted more puzzles to practice.
+
+## Gameplay Rules
+
+- Place exactly one queen in each row.
+- Place exactly one queen in each column.
+- Place exactly one queen in each color region.
+- Queens cannot touch each other, including diagonals.
+
+## Features
+
+- Play saved puzzles from the Play page.
+- Create and save custom puzzles in Puzzle Designer.
+- Timer, reset, undo, and settings menu.
+- Drag across cells to quickly place X marks.
+- Built-in default starter puzzles on first run.
+
+## Pages
+
+- `/` Play
+- `/designer` Puzzle Designer
+- `/about` About
+
+## Project Link
+
+- GitHub: https://github.com/ali4zimi/linkedin-queen-clone
 
 ## Setup
 
-Make sure to install dependencies:
+Install dependencies:
 
 ```bash
-# npm
 npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
 ```
 
-## Development Server
+## Development
 
-Start the development server on `http://localhost:3000`:
+Run local dev server on http://localhost:3000:
 
 ```bash
-# npm
 npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
-## Production
+## Build and Preview
 
-Build the application for production:
+Build for production:
 
 ```bash
-# npm
 npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
 ```
 
-Locally preview production build:
+Preview the production build:
 
 ```bash
-# npm
 npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
 ```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
