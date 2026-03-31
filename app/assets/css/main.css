@@ -226,6 +226,7 @@ body {
 }
 
 .field input,
+.field select,
 .saved-row select {
   width: 100%;
   box-sizing: border-box;

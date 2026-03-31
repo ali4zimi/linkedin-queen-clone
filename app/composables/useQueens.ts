@@ -12,36 +12,27 @@ export type DesignedPuzzle = {
 };
 
 export type CellMark = 0 | 1 | 2;
+export type PuzzleDifficulty = "easy" | "medium";
 
 export const MIN_GRID = 4;
-export const MAX_GRID = 16;
+export const MAX_GRID = 12;
 export const PUZZLES_STORAGE_KEY = "queen-competition-puzzles";
 const LEGACY_LEVELS_STORAGE_KEY = "queen-competition-levels";
 const DEFAULT_PUZZLES_SEEDED_KEY = "queen-competition-default-puzzles-seeded";
 
 export const palette = [
-  "#f87171",
-  "#f59e0b",
-  "#facc15",
-  "#4ade80",
-  "#2dd4bf",
-  "#38bdf8",
-  "#60a5fa",
-  "#a78bfa",
-  "#f472b6",
-  "#fb7185",
-  "#94a3b8",
-  "#34d399",
-  "#22d3ee",
-  "#818cf8",
-  "#a3e635",
-  "#fb923c",
-  "#c084fc",
-  "#14b8a6",
-  "#e879f9",
-  "#f43f5e",
+  "#ef4444",
+  "#f97316",
+  "#eab308",
   "#84cc16",
+  "#22c55e",
+  "#14b8a6",
   "#06b6d4",
+  "#0ea5e9",
+  "#3b82f6",
+  "#6366f1",
+  "#8b5cf6",
+  "#ec4899",
 ];
 
 const cardinalNeighbors: ReadonlyArray<readonly [number, number]> = [
@@ -68,25 +59,259 @@ function randomInt(maxExclusive: number): number {
   return Math.floor(Math.random() * maxExclusive);
 }
 
+type PatternSeed = {
+  weight: number;
+  cells: ReadonlyArray<readonly [number, number]>;
+};
+
+const patternSeeds: ReadonlyArray<PatternSeed> = [
+  // Single cell
+  {
+    weight: 6,
+    cells: [[0, 0]],
+  },
+  // L shape
+  {
+    weight: 18,
+    cells: [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [2, 1],
+    ],
+  },
+  // Long L shape
+  {
+    weight: 16,
+    cells: [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [3, 0],
+      [3, 1],
+    ],
+  },
+  // T shape
+  {
+    weight: 16,
+    cells: [
+      [0, 1],
+      [1, 0],
+      [1, 1],
+      [1, 2],
+    ],
+  },
+  // H shape
+  {
+    weight: 10,
+    cells: [
+      [0, 0],
+      [1, 0],
+      [1, 1],
+      [1, 2],
+      [0, 2],
+    ],
+  },
+  // E shape (compact)
+  {
+    weight: 8,
+    cells: [
+      [0, 0],
+      [0, 1],
+      [0, 2],
+      [1, 0],
+      [1, 1],
+      [2, 0],
+      [2, 1],
+    ],
+  },
+  // Tetromino O
+  {
+    weight: 7,
+    cells: [
+      [0, 0],
+      [0, 1],
+      [1, 0],
+      [1, 1],
+    ],
+  },
+  // Tetromino S
+  {
+    weight: 7,
+    cells: [
+      [0, 1],
+      [0, 2],
+      [1, 0],
+      [1, 1],
+    ],
+  },
+  // Tetromino Z
+  {
+    weight: 7,
+    cells: [
+      [0, 0],
+      [0, 1],
+      [1, 1],
+      [1, 2],
+    ],
+  },
+  // Tetromino J
+  {
+    weight: 9,
+    cells: [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [2, 1],
+    ],
+  },
+  // Tetromino I
+  {
+    weight: 5,
+    cells: [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [3, 0],
+    ],
+  },
+];
+
+function buildCornerAxisPattern(size: number): Array<readonly [number, number]> {
+  const cells: Array<readonly [number, number]> = [];
+
+  for (let col = 0; col < size; col++) {
+    cells.push([0, col]);
+  }
+
+  for (let row = 1; row < size; row++) {
+    cells.push([row, 0]);
+  }
+
+  return cells;
+}
+
+function pickWeightedPattern(): ReadonlyArray<readonly [number, number]> {
+  const totalWeight = patternSeeds.reduce((sum, pattern) => sum + pattern.weight, 0);
+  let roll = randomInt(totalWeight);
+
+  for (const pattern of patternSeeds) {
+    if (roll < pattern.weight) {
+      return pattern.cells;
+    }
+
+    roll -= pattern.weight;
+  }
+
+  return patternSeeds[0]!.cells;
+}
+
+function pickPatternForSize(size: number): ReadonlyArray<readonly [number, number]> {
+  // Rarely use the full row+column corner L shape to create strong early deductions.
+  if (size >= 6 && randomInt(100) < 8) {
+    return buildCornerAxisPattern(size);
+  }
+
+  return pickWeightedPattern();
+}
+
+function normalizePattern(cells: ReadonlyArray<readonly [number, number]>): Array<readonly [number, number]> {
+  const minRow = Math.min(...cells.map(([row]) => row));
+  const minCol = Math.min(...cells.map(([, col]) => col));
+  return cells.map(([row, col]) => [row - minRow, col - minCol]);
+}
+
+function transformPattern(
+  cells: ReadonlyArray<readonly [number, number]>,
+  rotateQuarterTurns: number,
+  mirror: boolean,
+): Array<readonly [number, number]> {
+  let next = cells.map(([row, col]) => [row, col] as const);
+
+  if (mirror) {
+    next = next.map(([row, col]) => [row, -col] as const);
+  }
+
+  for (let i = 0; i < rotateQuarterTurns; i++) {
+    next = next.map(([row, col]) => [col, -row] as const);
+  }
+
+  return normalizePattern(next);
+}
+
 export function generateBoard(size: number, colors: number): number[][] {
   const colorTotal = Math.max(1, Math.min(colors, size));
   const nextBoard = Array.from({ length: size }, () => Array<number>(size).fill(-1));
-
-  const usedSeeds = new Set<string>();
   const cellsByColor: Position[][] = Array.from({ length: colorTotal }, () => []);
 
-  for (let color = 0; color < colorTotal; color++) {
-    let seed: Position = { row: 0, col: 0 };
-    do {
-      seed = { row: randomInt(size), col: randomInt(size) };
-    } while (usedSeeds.has(keyOf(seed.row, seed.col)));
+  let unassigned = size * size;
 
-    usedSeeds.add(keyOf(seed.row, seed.col));
-    nextBoard[seed.row]![seed.col] = color;
-    cellsByColor[color]!.push(seed);
+  function assignCell(color: number, row: number, col: number): void {
+    if (nextBoard[row]![col] !== -1) {
+      return;
+    }
+
+    nextBoard[row]![col] = color;
+    cellsByColor[color]!.push({ row, col });
+    unassigned -= 1;
   }
 
-  let unassigned = size * size - colorTotal;
+  function findUnassignedCell(): Position {
+    for (let attempt = 0; attempt < size * size; attempt++) {
+      const row = randomInt(size);
+      const col = randomInt(size);
+      if (nextBoard[row]![col] === -1) {
+        return { row, col };
+      }
+    }
+
+    for (let row = 0; row < size; row++) {
+      for (let col = 0; col < size; col++) {
+        if (nextBoard[row]![col] === -1) {
+          return { row, col };
+        }
+      }
+    }
+
+    return { row: 0, col: 0 };
+  }
+
+  for (let color = 0; color < colorTotal; color++) {
+    let placedPattern = false;
+    const patternAttempts = 14;
+
+    for (let attempt = 0; attempt < patternAttempts; attempt++) {
+      const basePattern = pickPatternForSize(size);
+      const transformed = transformPattern(basePattern, randomInt(4), randomInt(2) === 1);
+      const maxRow = Math.max(...transformed.map(([row]) => row));
+      const maxCol = Math.max(...transformed.map(([, col]) => col));
+
+      if (maxRow >= size || maxCol >= size) {
+        continue;
+      }
+
+      const anchorRow = randomInt(size - maxRow);
+      const anchorCol = randomInt(size - maxCol);
+      const translated = transformed.map(([row, col]) => [row + anchorRow, col + anchorCol] as const);
+
+      const canPlace = translated.every(([row, col]) => inBounds(row, col, size) && nextBoard[row]![col] === -1);
+      if (!canPlace) {
+        continue;
+      }
+
+      for (const [row, col] of translated) {
+        assignCell(color, row, col);
+      }
+
+      placedPattern = true;
+      break;
+    }
+
+    if (!placedPattern) {
+      const seed = findUnassignedCell();
+      assignCell(color, seed.row, seed.col);
+    }
+  }
 
   while (unassigned > 0) {
     const expandableColors: number[] = [];
@@ -175,6 +400,238 @@ export function generateBoard(size: number, colors: number): number[][] {
   return nextBoard;
 }
 
+function hasNeighborConflict(
+  row: number,
+  col: number,
+  placedQueens: ReadonlyArray<readonly [number, number]>,
+): boolean {
+  for (const [otherRow, otherCol] of placedQueens) {
+    const rowGap = Math.abs(otherRow - row);
+    const colGap = Math.abs(otherCol - col);
+
+    if (rowGap <= 1 && colGap <= 1) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function countPuzzleSolutions(board: number[][], maxCount: number): number {
+  const size = board.length;
+  if (!size || board.some((row) => row.length !== size)) {
+    return 0;
+  }
+
+  let solutionCount = 0;
+  const usedRows = new Set<number>();
+  const usedCols = new Set<number>();
+  const usedColors = new Set<number>();
+  const placedQueens: Array<readonly [number, number]> = [];
+
+  function getCandidatesForRow(row: number): number[] {
+    const cols: number[] = [];
+
+    for (let col = 0; col < size; col++) {
+      const color = board[row]?.[col] ?? -1;
+      if (usedCols.has(col) || usedColors.has(color)) {
+        continue;
+      }
+
+      if (hasNeighborConflict(row, col, placedQueens)) {
+        continue;
+      }
+
+      cols.push(col);
+    }
+
+    return cols;
+  }
+
+  function backtrack(): void {
+    if (solutionCount >= maxCount) {
+      return;
+    }
+
+    if (placedQueens.length === size) {
+      solutionCount += 1;
+      return;
+    }
+
+    let bestRow = -1;
+    let bestCandidates: number[] = [];
+
+    for (let row = 0; row < size; row++) {
+      if (usedRows.has(row)) {
+        continue;
+      }
+
+      const rowCandidates = getCandidatesForRow(row);
+      if (!rowCandidates.length) {
+        return;
+      }
+
+      if (bestRow === -1 || rowCandidates.length < bestCandidates.length) {
+        bestRow = row;
+        bestCandidates = rowCandidates;
+      }
+    }
+
+    if (bestRow === -1) {
+      return;
+    }
+
+    for (const col of bestCandidates) {
+      const color = board[bestRow]?.[col] ?? -1;
+
+      usedRows.add(bestRow);
+      usedCols.add(col);
+      usedColors.add(color);
+      placedQueens.push([bestRow, col]);
+
+      backtrack();
+
+      placedQueens.pop();
+      usedColors.delete(color);
+      usedCols.delete(col);
+      usedRows.delete(bestRow);
+
+      if (solutionCount >= maxCount) {
+        return;
+      }
+    }
+  }
+
+  backtrack();
+  return solutionCount;
+}
+
+function getCandidateCellsForState(
+  board: number[][],
+  usedRows: ReadonlySet<number>,
+  usedCols: ReadonlySet<number>,
+  usedColors: ReadonlySet<number>,
+  placedQueens: ReadonlyArray<readonly [number, number]>,
+): Array<{ row: number; col: number; color: number }> {
+  const size = board.length;
+  const cells: Array<{ row: number; col: number; color: number }> = [];
+
+  for (let row = 0; row < size; row++) {
+    if (usedRows.has(row)) {
+      continue;
+    }
+
+    for (let col = 0; col < size; col++) {
+      const color = board[row]?.[col] ?? -1;
+
+      if (usedCols.has(col) || usedColors.has(color)) {
+        continue;
+      }
+
+      if (hasNeighborConflict(row, col, placedQueens)) {
+        continue;
+      }
+
+      cells.push({ row, col, color });
+    }
+  }
+
+  return cells;
+}
+
+function evaluateLogicalSolvability(board: number[][]): { solved: boolean; placedCount: number } {
+  const size = board.length;
+  if (!size || board.some((row) => row.length !== size)) {
+    return { solved: false, placedCount: 0 };
+  }
+
+  const usedRows = new Set<number>();
+  const usedCols = new Set<number>();
+  const usedColors = new Set<number>();
+  const placedQueens: Array<readonly [number, number]> = [];
+
+  while (placedQueens.length < size) {
+    const candidates = getCandidateCellsForState(board, usedRows, usedCols, usedColors, placedQueens);
+    if (!candidates.length) {
+      break;
+    }
+
+    let forced: { row: number; col: number; color: number } | null = null;
+
+    // Rule 1: a row has exactly one possible cell.
+    for (let row = 0; row < size && !forced; row++) {
+      if (usedRows.has(row)) {
+        continue;
+      }
+
+      const rowOptions = candidates.filter((cell) => cell.row === row);
+      if (rowOptions.length === 1) {
+        forced = rowOptions[0]!;
+      }
+    }
+
+    // Rule 2: a column has exactly one possible cell.
+    for (let col = 0; col < size && !forced; col++) {
+      if (usedCols.has(col)) {
+        continue;
+      }
+
+      const colOptions = candidates.filter((cell) => cell.col === col);
+      if (colOptions.length === 1) {
+        forced = colOptions[0]!;
+      }
+    }
+
+    // Rule 3: a color region has exactly one possible cell.
+    for (let color = 0; color < size && !forced; color++) {
+      if (usedColors.has(color)) {
+        continue;
+      }
+
+      const colorOptions = candidates.filter((cell) => cell.color === color);
+      if (colorOptions.length === 1) {
+        forced = colorOptions[0]!;
+      }
+    }
+
+    if (!forced) {
+      break;
+    }
+
+    usedRows.add(forced.row);
+    usedCols.add(forced.col);
+    usedColors.add(forced.color);
+    placedQueens.push([forced.row, forced.col]);
+  }
+
+  return {
+    solved: placedQueens.length === size,
+    placedCount: placedQueens.length,
+  };
+}
+
+export function generatePuzzleBoard(size: number, difficulty: PuzzleDifficulty = "easy"): number[][] {
+  const maxAttempts = difficulty === "easy" ? 220 : 140;
+  const mediumThreshold = Math.max(1, Math.ceil(size * 0.7));
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const candidate = generateBoard(size, size);
+    if (countPuzzleSolutions(candidate, 2) !== 1) {
+      continue;
+    }
+
+    const logical = evaluateLogicalSolvability(candidate);
+    const passesDifficulty =
+      difficulty === "easy" ? logical.solved : logical.solved || logical.placedCount >= mediumThreshold;
+
+    if (passesDifficulty) {
+      return candidate;
+    }
+  }
+
+  return generateBoard(size, size);
+}
+
 export function getQueenKeys(marks: Record<string, CellMark>): Set<string> {
   const result = new Set<string>();
   for (const [key, value] of Object.entries(marks)) {
@@ -254,21 +711,21 @@ function buildDefaultPuzzles(): DesignedPuzzle[] {
       id: "default-starter-6",
       name: "Starter 6x6",
       size: 6,
-      board: generateBoard(6, 6),
+      board: generatePuzzleBoard(6, "easy"),
       createdAt: baseTime,
     },
     {
       id: "default-classic-8",
       name: "Classic 8x8",
       size: 8,
-      board: generateBoard(8, 8),
+      board: generatePuzzleBoard(8, "easy"),
       createdAt: baseTime + 1,
     },
     {
       id: "default-challenge-10",
       name: "Challenge 10x10",
       size: 10,
-      board: generateBoard(10, 10),
+      board: generatePuzzleBoard(10, "medium"),
       createdAt: baseTime + 2,
     },
   ];

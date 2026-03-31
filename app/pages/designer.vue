@@ -2,7 +2,8 @@
 import {
   MAX_GRID,
   MIN_GRID,
-  generateBoard,
+  type PuzzleDifficulty,
+  generatePuzzleBoard,
   loadDesignedPuzzles,
   palette,
   saveDesignedPuzzles,
@@ -11,6 +12,7 @@ import {
 
 const size = ref(8);
 const draftSize = ref(8);
+const draftDifficulty = ref<PuzzleDifficulty>("easy");
 const dialogPuzzleName = ref("");
 const previewBoard = ref<number[][]>([]);
 const savedPuzzles = ref<DesignedPuzzle[]>([]);
@@ -27,7 +29,7 @@ function refreshSavedPuzzles(): void {
 
 function generatePreview(): void {
   size.value = draftSize.value;
-  previewBoard.value = generateBoard(size.value, size.value);
+  previewBoard.value = generatePuzzleBoard(size.value, draftDifficulty.value);
 }
 
 function getDefaultPuzzleName(puzzles: DesignedPuzzle[]): string {
@@ -146,6 +148,14 @@ onMounted(() => {
             type="range"
           />
           <strong>{{ draftSize }} x {{ draftSize }}</strong>
+        </label>
+
+        <label class="field" for="designer-difficulty">
+          <span>Difficulty</span>
+          <select id="designer-difficulty" v-model="draftDifficulty">
+            <option value="easy">Easy (logical-only)</option>
+            <option value="medium">Medium (some ambiguity)</option>
+          </select>
         </label>
 
         <div class="actions">
