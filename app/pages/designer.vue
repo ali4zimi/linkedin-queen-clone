@@ -23,6 +23,7 @@ const generatorWorker = ref<Worker | null>(null);
 const selectedColor = ref(0);
 const isEraseMode = ref(false);
 const isPaintDragging = ref(false);
+const activePaintPointerId = ref<number | null>(null);
 const drawError = ref("");
 
 const cardinalNeighbors: ReadonlyArray<readonly [number, number]> = [
@@ -544,6 +545,10 @@ function handlePaintPointerMove(event: PointerEvent): void {
     return;
   }
 
+  if (activePaintPointerId.value !== null && event.pointerId !== activePaintPointerId.value) {
+    return;
+  }
+
   const cell = findCellFromPointer(event);
   if (!cell) {
     return;
@@ -552,12 +557,21 @@ function handlePaintPointerMove(event: PointerEvent): void {
   paintCell(cell.row, cell.col);
 }
 
+function handlePaintPointerEnd(event: PointerEvent): void {
+  if (activePaintPointerId.value !== null && event.pointerId !== activePaintPointerId.value) {
+    return;
+  }
+
+  stopPaintDrag();
+}
+
 function stopPaintDrag(): void {
   isPaintDragging.value = false;
+  activePaintPointerId.value = null;
 
   window.removeEventListener("pointermove", handlePaintPointerMove);
-  window.removeEventListener("pointerup", stopPaintDrag);
-  window.removeEventListener("pointercancel", stopPaintDrag);
+  window.removeEventListener("pointerup", handlePaintPointerEnd);
+  window.removeEventListener("pointercancel", handlePaintPointerEnd);
 }
 
 function startPaintDrag(row: number, col: number, event: PointerEvent): void {
@@ -565,16 +579,22 @@ function startPaintDrag(row: number, col: number, event: PointerEvent): void {
     return;
   }
 
+  if (event.pointerType === "mouse" && event.button !== 0) {
+    return;
+  }
+
+  // Always reset stale gesture state before starting a new drag.
+  stopPaintDrag();
+
   isPaintDragging.value = true;
+  activePaintPointerId.value = event.pointerId;
   paintCell(row, col);
 
   window.addEventListener("pointermove", handlePaintPointerMove);
-  window.addEventListener("pointerup", stopPaintDrag);
-  window.addEventListener("pointercancel", stopPaintDrag);
+  window.addEventListener("pointerup", handlePaintPointerEnd);
+  window.addEventListener("pointercancel", handlePaintPointerEnd);
 
-  if (event.pointerType === "touch") {
-    event.preventDefault();
-  }
+  event.preventDefault();
 }
 
 function fillRemainingCells(): void {
