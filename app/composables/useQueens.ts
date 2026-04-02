@@ -22,15 +22,12 @@ const DEFAULT_PUZZLES_SEEDED_KEY = "queen-competition-default-puzzles-seeded";
 
 export const palette = [
   "#ef4444",
-  "#f97316",
+  "#f46600",
   "#eab308",
-  "#84cc16",
+  "#d7fba2",
   "#22c55e",
-  "#14b8a6",
   "#06b6d4",
-  "#0ea5e9",
   "#3b82f6",
-  "#6366f1",
   "#8b5cf6",
   "#ec4899",
 ];

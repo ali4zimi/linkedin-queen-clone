@@ -456,6 +456,32 @@ body {
   justify-content: flex-end;
 }
 
+.designer-colors {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2rem, 1fr));
+  gap: 0.4rem;
+}
+
+.designer-color-swatch {
+  height: 2rem;
+  border: 2px solid rgba(17, 24, 39, 0.22);
+  border-radius: 0.45rem;
+  background: var(--swatch-color);
+  cursor: pointer;
+  padding: 0;
+}
+
+.designer-color-swatch-active {
+  border-color: #111827;
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.16);
+}
+
+.designer-color-swatch-disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  filter: grayscale(0.2);
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -533,6 +559,15 @@ body {
   transition: box-shadow 120ms ease;
   cursor: pointer;
   box-sizing: border-box;
+}
+
+.cell-unassigned {
+  background:
+    linear-gradient(45deg, rgba(17, 24, 39, 0.08) 25%, transparent 25%, transparent 75%, rgba(17, 24, 39, 0.08) 75%),
+    linear-gradient(45deg, rgba(17, 24, 39, 0.08) 25%, transparent 25%, transparent 75%, rgba(17, 24, 39, 0.08) 75%),
+    #f9fafb;
+  background-size: 12px 12px;
+  background-position: 0 0, 6px 6px;
 }
 
 .cell-thick-right {
