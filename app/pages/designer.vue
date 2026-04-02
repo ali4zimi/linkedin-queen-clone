@@ -18,6 +18,8 @@ const previewBoard = ref<number[][]>([]);
 const savedPuzzles = ref<DesignedPuzzle[]>([]);
 const saveError = ref("");
 const isSaveDialogOpen = ref(false);
+const isGenerating = ref(false);
+const generatorWorker = ref<Worker | null>(null);
 
 watch(dialogPuzzleName, () => {
   saveError.value = "";
@@ -27,9 +29,67 @@ function refreshSavedPuzzles(): void {
   savedPuzzles.value = loadDesignedPuzzles();
 }
 
-function generatePreview(): void {
+async function waitForUiPaint(): Promise<void> {
+  await nextTick();
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
+
+async function generateBoardInBackground(size: number, difficulty: PuzzleDifficulty): Promise<number[][]> {
+  const worker = generatorWorker.value;
+  if (!worker) {
+    return generatePuzzleBoard(size, difficulty);
+  }
+
+  return await new Promise<number[][]>((resolve, reject) => {
+    const handleMessage = (event: MessageEvent<{ board?: number[][]; error?: string }>) => {
+      worker.removeEventListener("message", handleMessage);
+      worker.removeEventListener("error", handleError);
+
+      if (event.data?.error) {
+        reject(new Error(event.data.error));
+        return;
+      }
+
+      if (!event.data?.board) {
+        reject(new Error("Worker did not return a board"));
+        return;
+      }
+
+      resolve(event.data.board);
+    };
+
+    const handleError = (event: ErrorEvent) => {
+      worker.removeEventListener("message", handleMessage);
+      worker.removeEventListener("error", handleError);
+      reject(new Error(event.message || "Worker generation failed"));
+    };
+
+    worker.addEventListener("message", handleMessage);
+    worker.addEventListener("error", handleError);
+    worker.postMessage({ size, difficulty });
+  });
+}
+
+async function generatePreview(): Promise<void> {
+  if (isGenerating.value) {
+    return;
+  }
+
+  isGenerating.value = true;
+  await waitForUiPaint();
+
   size.value = draftSize.value;
-  previewBoard.value = generatePuzzleBoard(size.value, draftDifficulty.value);
+
+  try {
+    previewBoard.value = await generateBoardInBackground(size.value, draftDifficulty.value);
+  } catch {
+    // Fallback keeps generation functional if worker initialization fails.
+    previewBoard.value = generatePuzzleBoard(size.value, draftDifficulty.value);
+  } finally {
+    isGenerating.value = false;
+  }
 }
 
 function getDefaultPuzzleName(puzzles: DesignedPuzzle[]): string {
@@ -43,9 +103,9 @@ function getDefaultPuzzleName(puzzles: DesignedPuzzle[]): string {
   return `Puzzle ${index}`;
 }
 
-function openSaveDialog(): void {
+async function openSaveDialog(): Promise<void> {
   if (!previewBoard.value.length) {
-    generatePreview();
+    await generatePreview();
   }
 
   const nextPuzzles = loadDesignedPuzzles();
@@ -59,9 +119,9 @@ function closeSaveDialog(): void {
   saveError.value = "";
 }
 
-function savePuzzle(): void {
+async function savePuzzle(): Promise<void> {
   if (!previewBoard.value.length) {
-    generatePreview();
+    await generatePreview();
   }
 
   const nextPuzzles = loadDesignedPuzzles();
@@ -121,9 +181,20 @@ function hasThickBottomBorder(row: number, col: number): boolean {
   return bottomColor !== -1 && currentColor !== bottomColor;
 }
 
-onMounted(() => {
-  generatePreview();
+onMounted(async () => {
+  if (import.meta.client) {
+    generatorWorker.value = new Worker(new URL("../utils/designer-generator.worker.ts", import.meta.url), {
+      type: "module",
+    });
+  }
+
+  await generatePreview();
   refreshSavedPuzzles();
+});
+
+onBeforeUnmount(() => {
+  generatorWorker.value?.terminate();
+  generatorWorker.value = null;
 });
 </script>
 
@@ -159,7 +230,7 @@ onMounted(() => {
         </label>
 
         <div class="actions">
-          <button class="btn btn-primary" type="button" @click="generatePreview">Generate</button>
+          <button class="btn btn-primary" type="button" :disabled="isGenerating" @click="generatePreview">{{ isGenerating ? "Generating..." : "Generate" }}</button>
         </div>
       </aside>
 
@@ -180,10 +251,17 @@ onMounted(() => {
         </div>
 
         <div class="designer-board-actions">
-          <button class="btn" type="button" @click="openSaveDialog">Save</button>
+          <button class="btn" type="button" :disabled="isGenerating" @click="openSaveDialog">Save</button>
         </div>
       </section>
     </section>
+
+    <div v-if="isGenerating" class="modal-backdrop modal-backdrop-top">
+      <section class="modal-card generating-modal" role="status" aria-live="polite" aria-label="Generating puzzle">
+        <h3>Generating</h3>
+        <p>Please wait.</p>
+      </section>
+    </div>
 
     <div v-if="isSaveDialogOpen" class="modal-backdrop" @click.self="closeSaveDialog">
       <section class="modal-card" role="dialog" aria-modal="true" aria-label="Save puzzle dialog">
@@ -197,8 +275,8 @@ onMounted(() => {
         <div v-if="saveError" class="error-message">{{ saveError }}</div>
 
         <div class="actions">
-          <button class="btn btn-primary" type="button" @click="savePuzzle">Save</button>
-          <button class="btn" type="button" @click="closeSaveDialog">Cancel</button>
+          <button class="btn btn-primary" type="button" :disabled="isGenerating" @click="savePuzzle">Save</button>
+          <button class="btn" type="button" :disabled="isGenerating" @click="closeSaveDialog">Cancel</button>
         </div>
       </section>
     </div>
