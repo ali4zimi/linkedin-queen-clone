@@ -8,6 +8,18 @@ watch(
     isNavOpen.value = false;
   },
 );
+
+
+useHead({
+  title: "Queens Puzzle Game",
+  meta: [
+    {
+      name: "description",
+      content:
+        "A clean, mobile-friendly logic puzzle where you place one queen per row, per column, and per region without letting queens touch each other.",
+    },
+  ],
+});
 </script>
 
 <template>

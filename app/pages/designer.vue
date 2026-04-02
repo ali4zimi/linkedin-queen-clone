@@ -706,6 +706,10 @@ onBeforeUnmount(() => {
   generatorWorker.value?.terminate();
   generatorWorker.value = null;
 });
+
+useHead({
+  title: "Puzzle Designer - Queens Puzzle Game",
+});
 </script>
 
 <template>

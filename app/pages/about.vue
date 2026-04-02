@@ -1,3 +1,9 @@
+<script setup lang="ts">
+useHead({
+  title: "About - Queens Puzzle Game",
+});
+</script>
+
 <template>
   <main class="page-shell">
     <header class="content-header">
@@ -8,7 +14,6 @@
     </header>
 
     <section class="about-hero">
-      <p class="eyebrow">Queens Puzzle Clone</p>
       <p class="about-lead">
         Inspired by the LinkedIn Queens game, this is a clean, mobile-friendly logic puzzle where you place one queen per row, per column, and per region
         without letting queens touch each other.
@@ -17,28 +22,40 @@
         This is a hobby project. I created this clone because many friends told me they wanted more puzzles to practice.
       </p>
 
-      <ul class="about-highlights" aria-label="highlights">
-        <li>Tap to cycle marks and drag to paint X marks quickly.</li>
-        <li>Create custom puzzles in Designer and solve them in Play.</li>
-        <li>Use timer, undo, and reset while solving.</li>
-      </ul>
-
-      <a
-        class="about-link"
-        href="https://github.com/ali4zimi/linkedin-queen-clone"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <span class="about-link-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path
-              fill="currentColor"
-              d="M12 2C6.48 2 2 6.59 2 12.25c0 4.52 2.87 8.35 6.84 9.7c.5.1.68-.22.68-.49c0-.24-.01-1.03-.01-1.87c-2.78.62-3.37-1.21-3.37-1.21c-.45-1.19-1.11-1.5-1.11-1.5c-.91-.64.07-.63.07-.63c1 .07 1.53 1.06 1.53 1.06c.9 1.57 2.35 1.12 2.92.86c.09-.67.35-1.12.64-1.38c-2.22-.26-4.55-1.14-4.55-5.08c0-1.12.39-2.03 1.03-2.75c-.11-.26-.45-1.31.1-2.73c0 0 .84-.28 2.75 1.05A9.3 9.3 0 0 1 12 7.85c.85 0 1.7.12 2.5.36c1.9-1.33 2.74-1.05 2.74-1.05c.56 1.42.22 2.47.11 2.73c.64.72 1.03 1.63 1.03 2.75c0 3.95-2.33 4.82-4.56 5.07c.36.32.68.95.68 1.92c0 1.39-.01 2.5-.01 2.84c0 .27.18.6.69.49A10.3 10.3 0 0 0 22 12.25C22 6.59 17.52 2 12 2"
-            />
-          </svg>
-        </span>
-        View source on GitHub
-      </a>
+      <div class="about-links">
+        <a
+          class="about-link"
+          href="https://github.com/ali4zimi/linkedin-queen-clone"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span class="about-link-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                fill="currentColor"
+                d="M12 2C6.48 2 2 6.59 2 12.25c0 4.52 2.87 8.35 6.84 9.7c.5.1.68-.22.68-.49c0-.24-.01-1.03-.01-1.87c-2.78.62-3.37-1.21-3.37-1.21c-.45-1.19-1.11-1.5-1.11-1.5c-.91-.64.07-.63.07-.63c1 .07 1.53 1.06 1.53 1.06c.9 1.57 2.35 1.12 2.92.86c.09-.67.35-1.12.64-1.38c-2.22-.26-4.55-1.14-4.55-5.08c0-1.12.39-2.03 1.03-2.75c-.11-.26-.45-1.31.1-2.73c0 0 .84-.28 2.75 1.05A9.3 9.3 0 0 1 12 7.85c.85 0 1.7.12 2.5.36c1.9-1.33 2.74-1.05 2.74-1.05c.56 1.42.22 2.47.11 2.73c.64.72 1.03 1.63 1.03 2.75c0 3.95-2.33 4.82-4.56 5.07c.36.32.68.95.68 1.92c0 1.39-.01 2.5-.01 2.84c0 .27.18.6.69.49A10.3 10.3 0 0 0 22 12.25C22 6.59 17.52 2 12 2"
+              />
+            </svg>
+          </span>
+          View source on GitHub
+        </a>
+        <a
+          class="about-link"
+          href="https://aboutali.com"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span class="about-link-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                fill="currentColor"
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"
+              />
+            </svg>
+          </span>
+          Visit my website
+        </a>
+      </div>
     </section>
   </main>
 </template>
@@ -93,6 +110,13 @@
   background: #ffffff;
 }
 
+.about-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
 .about-link-icon {
   width: 1rem;
   height: 1rem;
@@ -103,5 +127,12 @@
 .about-link-icon svg {
   width: 100%;
   height: 100%;
+}
+
+@media (min-width: 640px) {
+  .about-links {
+    flex-direction: row;
+    gap: 0.8rem;
+  }
 }
 </style>
